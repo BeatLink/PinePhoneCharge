@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Charge
+GenericName=Charge Control
+Comment=Charge the phone and its keyboard case
+Exec=chargectl-gui
+Icon=io.github.beatlink.Chargectl
+Terminal=false
+Categories=System;Settings;HardwareSettings;
+Keywords=battery;charge;power;keyboard;
+StartupNotify=true
+X-Purism-FormFactor=Workstation;Mobile;
+X-KDE-FormFactor=desktop;handset;

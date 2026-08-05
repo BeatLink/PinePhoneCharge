@@ -25,13 +25,34 @@
                     src = ./.;
                     format = "pyproject";
 
-                    nativeBuildInputs = [ python.pkgs.setuptools ];
+                    nativeBuildInputs = [
+                        python.pkgs.setuptools
+                        pkgs.gobject-introspection
+                        pkgs.wrapGAppsHook4
+                    ];
+
+                    buildInputs = [
+                        pkgs.gtk4
+                        pkgs.libadwaita
+                    ];
+
+                    propagatedBuildInputs = [ python.pkgs.pygobject3 ];
                     nativeCheckInputs = [ python.pkgs.pytest ];
+
+                    dontWrapGApps = true;
+                    makeWrapperArgs = [ "\${gappsWrapperArgs[@]}" ];
 
                     checkPhase = ''
                         runHook preCheck
                         PYTHONPATH=$PWD pytest tests
                         runHook postCheck
+                    '';
+
+                    postInstall = ''
+                        install -Dm444 data/io.github.beatlink.Chargectl.desktop \
+                            -t $out/share/applications
+                        install -Dm444 data/io.github.beatlink.Chargectl.svg \
+                            $out/share/icons/hicolor/scalable/apps/io.github.beatlink.Chargectl.svg
                     '';
                 };
 

@@ -11,5 +11,8 @@ requires-python = ">=3.9"
 [project.scripts]
 chargectl = "chargectl:main"
 
+[project.gui-scripts]
+chargectl-gui = "chargectl.gui:main"
+
 [tool.setuptools]
 packages = [ "chargectl" ]

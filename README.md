@@ -65,6 +65,10 @@ chargectl profile full    # charge to 100% before a long day out
 chargectl band 40 60      # a tighter band for a phone that mostly sits docked
 ```
 
+There is also `chargectl-gui`, an adaptive GTK4/libadwaita window that shows both
+packs live and switches profile or band from the phone itself. It appears in the
+app grid as **Charge**.
+
 Profile and band persist. The state directory is group writable, so switching
 profile does not need root; the daemon does, because it writes to sysfs.
 
