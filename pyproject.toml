@@ -1,0 +1,15 @@
+[build-system]
+requires = [ "setuptools" ]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chargectl"
+version = "0.1.0"
+description = "Charge control for the PinePhone and its keyboard case"
+requires-python = ">=3.9"
+
+[project.scripts]
+chargectl = "chargectl:main"
+
+[tool.setuptools]
+packages = [ "chargectl" ]
