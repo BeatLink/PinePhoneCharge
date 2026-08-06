@@ -31,9 +31,15 @@
                         pkgs.wrapGAppsHook4
                     ];
 
+                    # Both toolkits, because both front ends ship: chargectl-gui
+                    # on GTK4 and libadwaita, chargectl-gui3 on GTK3 and
+                    # libhandy. They exist side by side to be compared on
+                    # hardware where the choice costs something.
                     buildInputs = [
                         pkgs.gtk4
                         pkgs.libadwaita
+                        pkgs.gtk3
+                        pkgs.libhandy
                     ];
 
                     propagatedBuildInputs = [ python.pkgs.pygobject3 ];

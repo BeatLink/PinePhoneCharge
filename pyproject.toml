@@ -13,6 +13,7 @@ chargectl = "chargectl:main"
 
 [project.gui-scripts]
 chargectl-gui = "chargectl.gui:main"
+chargectl-gui3 = "chargectl.gui3:main"
 
 [tool.setuptools]
 packages = [ "chargectl" ]
