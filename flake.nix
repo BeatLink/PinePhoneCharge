@@ -16,50 +16,33 @@
             system:
             let
                 pkgs = nixpkgs.legacyPackages.${system};
-                python = pkgs.python3;
             in
             {
-                packages.default = python.pkgs.buildPythonApplication {
+                packages.default = pkgs.stdenv.mkDerivation {
                     pname = "chargectl";
                     version = "0.1.0";
                     src = ./.;
-                    format = "pyproject";
 
                     nativeBuildInputs = [
-                        python.pkgs.setuptools
-                        pkgs.gobject-introspection
-                        pkgs.wrapGAppsHook4
+                        pkgs.meson
+                        pkgs.ninja
+                        pkgs.vala
+                        pkgs.pkg-config
+                        pkgs.wrapGAppsHook3
                     ];
 
-                    # Both toolkits, because both front ends ship: chargectl-gui
-                    # on GTK4 and libadwaita, chargectl-gui3 on GTK3 and
-                    # libhandy. They exist side by side to be compared on
-                    # hardware where the choice costs something.
+                    # GTK3 and libhandy, which is what phosh itself draws with.
+                    # GTK4 renders through GSK, and on hardware without GLES 3.0
+                    # that means rasterising a scene graph in software; GTK3
+                    # draws with cairo directly and has no scene graph at all.
                     buildInputs = [
-                        pkgs.gtk4
-                        pkgs.libadwaita
+                        pkgs.glib
+                        pkgs.json-glib
                         pkgs.gtk3
                         pkgs.libhandy
                     ];
 
-                    propagatedBuildInputs = [ python.pkgs.pygobject3 ];
-                    nativeCheckInputs = [ python.pkgs.pytest ];
-
-                    dontWrapGApps = true;
-                    makeWrapperArgs = [ "\${gappsWrapperArgs[@]}" ];
-
-                    checkPhase = ''
-                        runHook preCheck
-                        PYTHONPATH=$PWD pytest tests
-                        runHook postCheck
-                    '';
-
-                    postInstall = ''
-                        install -Dm444 data/io.github.beatlink.Chargectl.desktop \
-                            -t $out/share/applications
-                        install -Dm444 data/io.github.beatlink.Chargectl.svg \
-                            $out/share/icons/hicolor/scalable/apps/io.github.beatlink.Chargectl.svg
-                    '';
+                    doCheck = true;
                 };
 
                 apps.default = {
@@ -68,11 +51,18 @@
                 };
 
                 devShells.default = pkgs.mkShell {
+                    nativeBuildInputs = [
+                        pkgs.meson
+                        pkgs.ninja
+                        pkgs.vala
+                        pkgs.pkg-config
+                    ];
+
                     buildInputs = [
-                        (python.withPackages (ps: [
-                            ps.pytest
-                            ps.flake8
-                        ]))
+                        pkgs.glib
+                        pkgs.json-glib
+                        pkgs.gtk3
+                        pkgs.libhandy
                     ];
                 };
             }
