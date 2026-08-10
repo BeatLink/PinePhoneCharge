@@ -68,5 +68,37 @@ void main (string[] args) {
         assert (Chargectl.balanced_limit (1000000, 70, null, null, CEILING) == 1000000);
     });
 
+    Test.add_func ("/policy/drain-warns-while-the-charger-is-losing", () => {
+        assert (Chargectl.draining_under_load ("maintain", true, "auto", -400000));
+        assert (Chargectl.draining_under_load ("full", true, "auto", -400000));
+        assert (Chargectl.draining_under_load ("balance", true, "auto", -400000));
+    });
+
+    Test.add_func ("/policy/drain-stays-quiet-while-the-phone-is-inhibited", () => {
+        assert (!Chargectl.draining_under_load ("maintain", true, "inhibit-charge", -400000));
+    });
+
+    Test.add_func ("/policy/drain-stays-quiet-off-the-charger", () => {
+        assert (!Chargectl.draining_under_load ("maintain", false, "auto", -400000));
+    });
+
+    Test.add_func ("/policy/drain-ignores-the-hands-off-profiles", () => {
+        assert (!Chargectl.draining_under_load ("passive", true, "auto", -400000));
+        assert (!Chargectl.draining_under_load ("case-first", true, "auto", -400000));
+    });
+
+    Test.add_func ("/policy/drain-ignores-a-phone-that-is-filling", () => {
+        assert (!Chargectl.draining_under_load ("full", true, "auto", 410000));
+    });
+
+    Test.add_func ("/policy/drain-ignores-noise-around-zero", () => {
+        assert (!Chargectl.draining_under_load ("balance", true, "auto", -10000));
+    });
+
+    Test.add_func ("/policy/drain-holds-still-without-a-reading", () => {
+        assert (!Chargectl.draining_under_load ("maintain", true, "auto", null));
+        assert (!Chargectl.draining_under_load ("maintain", true, null, -400000));
+    });
+
     Test.run ();
 }

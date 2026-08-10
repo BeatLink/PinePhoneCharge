@@ -104,6 +104,7 @@ namespace Chargectl {
         stdout.printf ("\n");
         stdout.printf ("  chargectl status          show both packs and the active profile\n");
         stdout.printf ("  chargectl daemon          run the control loop\n");
+        stdout.printf ("  chargectl watch           warn when the phone drains on the charger\n");
         stdout.printf ("  chargectl profile [name]  show or set the profile\n");
         stdout.printf ("  chargectl band low high   set the hold band\n");
     }
@@ -119,6 +120,10 @@ public static int main (string[] args) {
 
     case "daemon":
         Chargectl.daemon ();
+        return 0;
+
+    case "watch":
+        Chargectl.watch ();
         return 0;
 
     case "profile":

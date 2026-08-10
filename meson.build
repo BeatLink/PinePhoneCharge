@@ -18,6 +18,7 @@ core = files(
     'src/supply.vala',
     'src/settings.vala',
     'src/policy.vala',
+    'src/notify.vala',
 )
 
 executable(

@@ -8,6 +8,9 @@ namespace Chargectl {
         { "passive", "manage nothing, leave both chargers on auto" },
     };
 
+    public const int DRAIN_THRESHOLD = 50000;
+    public const string[] DRAIN_PROFILES = { "maintain", "full", "balance" };
+
     public const int BALANCE_FLOOR = 30;
     public const int BALANCE_SKEW = 5;
     public const int BALANCE_DEADBAND = 50000;
@@ -29,6 +32,35 @@ namespace Chargectl {
             names += PROFILES[row, 0];
         }
         return names;
+    }
+
+    /**
+     * Whether the phone is losing charge while something is trying to fill it.
+     *
+     * Only the profiles that mean to charge the phone qualify, and only while
+     * its own charger is on auto: a pack held at the top of the band is
+     * inhibited deliberately, so draining there is the policy working rather
+     * than the load winning. The threshold is the balance deadband, which keeps
+     * a pack sitting near zero from raising anything.
+     */
+    public bool draining_under_load (string profile, bool charger_online,
+                                     string? phone_behaviour, int? phone_current) {
+        if (!charger_online || phone_behaviour != "auto" || phone_current == null) {
+            return false;
+        }
+
+        bool managed = false;
+        foreach (string name in DRAIN_PROFILES) {
+            if (name == profile) {
+                managed = true;
+            }
+        }
+        if (!managed) {
+            return false;
+        }
+
+        int current = phone_current;
+        return current < -DRAIN_THRESHOLD;
     }
 
     /**

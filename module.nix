@@ -133,5 +133,22 @@ in
                 fi
             '';
         };
+
+        # A user service rather than part of the root daemon: the notification bus lives in the session, and reading the packs needs no privilege.
+        systemd.user.services.chargectl-notify = {
+            description = "Warn when the phone drains while it is charging";
+            wantedBy = [ "graphical-session.target" ];
+            partOf = [ "graphical-session.target" ];
+            after = [ "graphical-session.target" ];
+
+            environment.CHARGECTL_STATE = "${cfg.stateDirectory}/state.json";
+
+            serviceConfig = {
+                Type = "simple";
+                Restart = "always";
+                RestartSec = 10;
+                ExecStart = "${cfg.package}/bin/chargectl watch";
+            };
+        };
     };
 }
