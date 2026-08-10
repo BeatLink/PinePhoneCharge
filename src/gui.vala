@@ -1,6 +1,5 @@
 namespace Chargectl {
 
-    private const string APP_ID = "io.github.beatlink.Chargectl";
     private const int REFRESH_SECONDS = 2;
 
     private string microunits (int? value, string suffix, bool sign = false) {
@@ -35,6 +34,10 @@ namespace Chargectl {
             // AdwActionRow would have put a suffix.
             add (level);
             add (percentage);
+
+            // Shown here, not by the window's show_all: a row with no_show_all set is skipped by that walk, children included.
+            level.show ();
+            percentage.show ();
         }
 
         public bool refresh () {
@@ -162,7 +165,7 @@ namespace Chargectl {
         private bool refresh () {
             phone.refresh ();
             if (case_pack.refresh ()) {
-                case_pack.show_all ();
+                case_pack.show (); // Not show_all, which no_show_all makes a no-op on this row.
             } else {
                 case_pack.hide ();
             }
