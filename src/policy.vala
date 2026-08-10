@@ -9,6 +9,7 @@ namespace Chargectl {
     };
 
     public const int DRAIN_THRESHOLD = 50000;
+    public const int64 DRAIN_SUSTAIN = 30000000;
     public const string[] DRAIN_PROFILES = { "maintain", "full", "balance" };
 
     public const int BALANCE_FLOOR = 30;
@@ -61,6 +62,32 @@ namespace Chargectl {
 
         int current = phone_current;
         return current < -DRAIN_THRESHOLD;
+    }
+
+    /**
+     * Holds a drain back until it has lasted the whole window.
+     *
+     * A phone under a brief load dips negative and recovers on its own, which
+     * is not worth a banner. One sample back in the black restarts the clock,
+     * so only a drain that survives every reading across the window is
+     * reported. Time is passed in rather than read so the window is testable.
+     */
+    public class DrainTracker : Object {
+        private bool started = false;
+        private int64 since = 0;
+
+        public bool update (bool draining, int64 now) {
+            if (!draining) {
+                started = false;
+                return false;
+            }
+            if (!started) {
+                started = true;
+                since = now;
+                return false;
+            }
+            return now - since >= DRAIN_SUSTAIN;
+        }
     }
 
     /**

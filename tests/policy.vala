@@ -100,5 +100,34 @@ void main (string[] args) {
         assert (!Chargectl.draining_under_load ("maintain", true, null, -400000));
     });
 
+    Test.add_func ("/policy/drain-waits-out-the-window-before-firing", () => {
+        var tracker = new Chargectl.DrainTracker ();
+        assert (!tracker.update (true, 0));
+        assert (!tracker.update (true, 20000000));
+        assert (tracker.update (true, 30000000));
+    });
+
+    Test.add_func ("/policy/drain-keeps-reporting-once-the-window-has-passed", () => {
+        var tracker = new Chargectl.DrainTracker ();
+        assert (!tracker.update (true, 0));
+        assert (tracker.update (true, 30000000));
+        assert (tracker.update (true, 45000000));
+    });
+
+    Test.add_func ("/policy/drain-restarts-the-clock-on-one-good-sample", () => {
+        var tracker = new Chargectl.DrainTracker ();
+        assert (!tracker.update (true, 0));
+        assert (!tracker.update (true, 25000000));
+        assert (!tracker.update (false, 26000000));
+        assert (!tracker.update (true, 27000000));
+        assert (!tracker.update (true, 50000000));
+        assert (tracker.update (true, 57000000));
+    });
+
+    Test.add_func ("/policy/drain-never-fires-on-a-single-sample", () => {
+        var tracker = new Chargectl.DrainTracker ();
+        assert (!tracker.update (true, 1000000000));
+    });
+
     Test.run ();
 }
