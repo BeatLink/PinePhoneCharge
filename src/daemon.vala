@@ -36,8 +36,16 @@ namespace Chargectl {
         }
         int level = capacity;
 
-        if (case_attached () && values.profile != "passive") {
-            if (values.profile == "balance") {
+        if (case_attached ()) {
+            if (values.profile == "manual") {
+                limit = values.limit;
+                apply_limit (limit);
+                apply_case_limit (values.case_limit);
+            } else if (values.profile == "passive") {
+                // Passive manages no charger, but the input limit is what the driver gets wrong by default.
+                limit = values.limit;
+                apply_limit (limit);
+            } else if (values.profile == "balance") {
                 limit = balanced_limit (limit, level,
                                         read_int (attribute (CASE, "capacity")),
                                         read_int (attribute (PHONE, "current_now")),
@@ -62,8 +70,13 @@ namespace Chargectl {
         wanted_behaviours (values.profile, level, values.low, values.high,
                            out phone_behaviour, out case_behaviour);
 
-        case_behaviour = case_floor_guard (case_behaviour,
-                                           read_int (attribute (CASE, "capacity")));
+        if (values.profile == "manual") {
+            phone_behaviour = values.inhibit_phone ? "inhibit-charge" : "auto";
+            case_behaviour = values.inhibit_case ? "inhibit-charge" : "auto";
+        } else {
+            case_behaviour = case_floor_guard (case_behaviour,
+                                               read_int (attribute (CASE, "capacity")));
+        }
 
         string where = "phone at %d%%,".printf (level);
         set_behaviour (attribute (PHONE, "charge_behaviour"), phone_behaviour, where);

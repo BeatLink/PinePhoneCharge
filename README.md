@@ -63,6 +63,7 @@ control for this, not a register poke.
 | `full` | charge the phone to 100%, still before the case |
 | `case-first` | hold the phone in the band, but let the case fill first |
 | `balance` | let the case carry the load, moving charge only when the phone runs low |
+| `manual` | hold both limits and both chargers where you set them |
 | `passive` | manage nothing, leave both chargers on auto |
 
 `balance` follows the reasoning in [pinephone-kbpwrd][kbpwrd]: moving charge
@@ -78,6 +79,8 @@ chargectl profile full    # charge to 100% before a long day out
 chargectl band 40 60      # a tighter band for a phone that mostly sits docked
 chargectl limit 1.2       # draw less from a case that cannot keep up
 chargectl output off      # stop the case feeding the phone entirely
+chargectl case-limit 0.5  # under manual, what the case takes for itself
+chargectl inhibit case on # under manual, hold the case's charger off
 ```
 
 There is also `chargectl-gui`, an adaptive GTK3/libhandy window that shows both

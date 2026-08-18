@@ -99,6 +99,61 @@ namespace Chargectl {
         return 0;
     }
 
+    private int save (Settings values, string message) {
+        try {
+            values.save ();
+        } catch (Error error) {
+            stderr.printf ("%s\n", error.message);
+            return 1;
+        }
+        stdout.printf ("%s\n", message);
+        return 0;
+    }
+
+    /**
+     * Sets the case's own charging current, which is what it takes from the supply.
+     *
+     * Its register accepts any value, unlike the phone's, so this is not
+     * rounded to a ladder step.
+     */
+    public int set_case_limit (string text) {
+        double amps = 0;
+        if (!double.try_parse (text, out amps) || amps <= 0 || amps > 3.1) {
+            stderr.printf ("case limit must be an amperage between 0 and 3.1\n");
+            return 1;
+        }
+        var values = Settings.load ();
+        values.case_limit = (int) (amps * 1000000);
+        return save (values, "case limit %.2f A".printf (amps));
+    }
+
+    public int set_inhibit (string? which, string? state) {
+        var values = Settings.load ();
+
+        if (which == null) {
+            stdout.printf ("phone %s\n", values.inhibit_phone ? "inhibited" : "charging");
+            stdout.printf ("case  %s\n", values.inhibit_case ? "inhibited" : "charging");
+            return 0;
+        }
+
+        if (state != "on" && state != "off") {
+            stderr.printf ("usage: chargectl inhibit <phone|case> <on|off>\n");
+            return 2;
+        }
+        bool wanted = state == "on";
+
+        if (which == "phone") {
+            values.inhibit_phone = wanted;
+        } else if (which == "case") {
+            values.inhibit_case = wanted;
+        } else {
+            stderr.printf ("inhibit takes phone or case\n");
+            return 2;
+        }
+
+        return save (values, "%s %s".printf (which, wanted ? "inhibited" : "charging"));
+    }
+
     public int set_limit (string text) {
         double amps = 0;
         if (!double.try_parse (text, out amps) || amps <= 0 || amps > 3) {
@@ -162,6 +217,9 @@ namespace Chargectl {
         stdout.printf ("  chargectl band low high   set the hold band\n");
         stdout.printf ("  chargectl limit [amps]    set the current drawn from the case\n");
         stdout.printf ("  chargectl output [on|off] show or switch the case's output\n");
+        stdout.printf ("  chargectl case-limit [a]  set what the case draws for itself\n");
+        stdout.printf ("  chargectl inhibit <pack> <on|off>\n");
+        stdout.printf ("                            hold a charger off, under the manual profile\n");
     }
 }
 
@@ -205,6 +263,17 @@ public static int main (string[] args) {
             return 0;
         }
         return Chargectl.set_limit (args[2]);
+
+    case "case-limit":
+        if (args.length < 3) {
+            stdout.printf ("%.2f A\n", Chargectl.Settings.load ().case_limit / 1000000.0);
+            return 0;
+        }
+        return Chargectl.set_case_limit (args[2]);
+
+    case "inhibit":
+        return Chargectl.set_inhibit (args.length > 2 ? args[2] : null,
+                                      args.length > 3 ? args[3] : null);
 
     case "output":
         return Chargectl.toggle_output (args.length > 2 ? args[2] : null);

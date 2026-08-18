@@ -77,6 +77,13 @@ namespace Chargectl {
         private Gtk.ComboBoxText profile;
         private Gtk.SpinButton low;
         private Gtk.SpinButton high;
+        private Hdy.ActionRow low_row;
+        private Hdy.ActionRow high_row;
+        private Hdy.PreferencesGroup manual;
+        private Gtk.ComboBoxText phone_limit;
+        private Gtk.SpinButton case_limit;
+        private Gtk.Switch inhibit_phone;
+        private Gtk.Switch inhibit_case;
         private Gtk.InfoBar info;
         private Gtk.Label info_label;
         private bool loading = false;
@@ -109,14 +116,14 @@ namespace Chargectl {
             low = new Gtk.SpinButton.with_range (0, 100, 1);
             low.valign = Gtk.Align.CENTER;
             low.value_changed.connect (on_band_changed);
-            var low_row = new Hdy.ActionRow ();
+            low_row = new Hdy.ActionRow ();
             low_row.title = "Resume charging below";
             low_row.add (low);
 
             high = new Gtk.SpinButton.with_range (0, 100, 1);
             high.valign = Gtk.Align.CENTER;
             high.value_changed.connect (on_band_changed);
-            var high_row = new Hdy.ActionRow ();
+            high_row = new Hdy.ActionRow ();
             high_row.title = "Stop charging at";
             high_row.add (high);
 
@@ -125,6 +132,47 @@ namespace Chargectl {
             policy.add (profile_row);
             policy.add (low_row);
             policy.add (high_row);
+
+            // The phone's register holds these three steps and nothing between, so a spin button would offer values it cannot take.
+            phone_limit = new Gtk.ComboBoxText ();
+            phone_limit.append_text ("0.5 A");
+            phone_limit.append_text ("0.9 A");
+            phone_limit.append_text ("1.5 A");
+            phone_limit.valign = Gtk.Align.CENTER;
+            phone_limit.changed.connect (on_manual_changed);
+            var phone_limit_row = new Hdy.ActionRow ();
+            phone_limit_row.title = "Phone draws";
+            phone_limit_row.add (phone_limit);
+
+            case_limit = new Gtk.SpinButton.with_range (0.1, 3.1, 0.1);
+            case_limit.digits = 1;
+            case_limit.valign = Gtk.Align.CENTER;
+            case_limit.value_changed.connect (on_manual_changed);
+            var case_limit_row = new Hdy.ActionRow ();
+            case_limit_row.title = "Case draws";
+            case_limit_row.add (case_limit);
+
+            inhibit_phone = new Gtk.Switch ();
+            inhibit_phone.valign = Gtk.Align.CENTER;
+            inhibit_phone.notify["active"].connect (on_manual_changed);
+            var inhibit_phone_row = new Hdy.ActionRow ();
+            inhibit_phone_row.title = "Hold the phone's charger off";
+            inhibit_phone_row.add (inhibit_phone);
+
+            inhibit_case = new Gtk.Switch ();
+            inhibit_case.valign = Gtk.Align.CENTER;
+            inhibit_case.notify["active"].connect (on_manual_changed);
+            var inhibit_case_row = new Hdy.ActionRow ();
+            inhibit_case_row.title = "Hold the case's charger off";
+            inhibit_case_row.add (inhibit_case);
+
+            manual = new Hdy.PreferencesGroup ();
+            manual.title = "By hand";
+            manual.add (phone_limit_row);
+            manual.add (case_limit_row);
+            manual.add (inhibit_phone_row);
+            manual.add (inhibit_case_row);
+            manual.no_show_all = true;
 
             input = new Hdy.ActionRow ();
             input.title = "Input limit";
@@ -135,6 +183,7 @@ namespace Chargectl {
             var page = new Hdy.PreferencesPage ();
             page.add (packs);
             page.add (policy);
+            page.add (manual);
             page.add (supply);
 
             var header = new Hdy.HeaderBar ();
@@ -185,9 +234,49 @@ namespace Chargectl {
             profile_row.subtitle = profile_description (values.profile) ?? "";
             low.set_value (values.low);
             high.set_value (values.high);
+            case_limit.set_value (values.case_limit / 1000000.0);
+            phone_limit.set_active (limit_index (values.limit));
+            inhibit_phone.set_active (values.inhibit_phone);
+            inhibit_case.set_active (values.inhibit_case);
+            show_for (values.profile);
             loading = false;
 
             return Source.CONTINUE;
+        }
+
+        /**
+         * Leaves only the controls the active profile actually reads on screen.
+         */
+        private void show_for (string profile) {
+            bool banded = profile_uses_band (profile);
+            low_row.visible = banded;
+            high_row.visible = banded;
+
+            if (profile_is_manual (profile)) {
+                manual.show ();
+            } else {
+                manual.hide ();
+            }
+        }
+
+        private int limit_index (int microamps) {
+            if (microamps <= PHONE_LIMIT_LOW) {
+                return 0;
+            }
+            return microamps <= PHONE_LIMIT_MEDIUM ? 1 : 2;
+        }
+
+        private void on_manual_changed () {
+            var values = Settings.load ();
+            int[] steps = { PHONE_LIMIT_LOW, PHONE_LIMIT_MEDIUM, PHONE_LIMIT_HIGH };
+            int active = phone_limit.get_active ();
+            if (active >= 0) {
+                values.limit = steps[active];
+            }
+            values.case_limit = (int) (case_limit.get_value () * 1000000);
+            values.inhibit_phone = inhibit_phone.get_active ();
+            values.inhibit_case = inhibit_case.get_active ();
+            store (values);
         }
 
         private void store (Settings values) {
@@ -209,6 +298,8 @@ namespace Chargectl {
 
             string chosen = profile_names ()[active];
             profile_row.subtitle = profile_description (chosen) ?? "";
+
+            show_for (chosen);
 
             var values = Settings.load ();
             values.profile = chosen;

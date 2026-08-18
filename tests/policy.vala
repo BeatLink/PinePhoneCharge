@@ -44,6 +44,20 @@ void main (string[] args) {
         assert (Chargectl.case_floor_guard ("inhibit-charge", null) == "inhibit-charge");
     });
 
+    Test.add_func ("/policy/only-the-banded-profiles-use-a-band", () => {
+        assert (Chargectl.profile_uses_band ("maintain"));
+        assert (Chargectl.profile_uses_band ("case-first"));
+        assert (!Chargectl.profile_uses_band ("full"));
+        assert (!Chargectl.profile_uses_band ("balance"));
+        assert (!Chargectl.profile_uses_band ("manual"));
+        assert (!Chargectl.profile_uses_band ("passive"));
+    });
+
+    Test.add_func ("/policy/only-manual-is-manual", () => {
+        assert (Chargectl.profile_is_manual ("manual"));
+        assert (!Chargectl.profile_is_manual ("maintain"));
+    });
+
     Test.add_func ("/policy/an-absent-case-gives-the-phone-everything", () => {
         int phone;
         int case_pack;

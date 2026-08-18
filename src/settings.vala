@@ -5,6 +5,9 @@ namespace Chargectl {
         public int low { get; set; default = 75; }
         public int high { get; set; default = 80; }
         public int limit { get; set; default = 1500000; }
+        public int case_limit { get; set; default = 2300000; }
+        public bool inhibit_phone { get; set; default = false; }
+        public bool inhibit_case { get; set; default = false; }
         public int interval { get; set; default = 30; }
 
         public static string config_path () {
@@ -50,6 +53,15 @@ namespace Chargectl {
             if (object.has_member ("limit")) {
                 limit = (int) object.get_int_member ("limit");
             }
+            if (object.has_member ("case_limit")) {
+                case_limit = (int) object.get_int_member ("case_limit");
+            }
+            if (object.has_member ("inhibit_phone")) {
+                inhibit_phone = object.get_boolean_member ("inhibit_phone");
+            }
+            if (object.has_member ("inhibit_case")) {
+                inhibit_case = object.get_boolean_member ("inhibit_case");
+            }
             if (object.has_member ("interval")) {
                 interval = (int) object.get_int_member ("interval");
             }
@@ -60,6 +72,9 @@ namespace Chargectl {
                 && low == other.low
                 && high == other.high
                 && limit == other.limit
+                && case_limit == other.case_limit
+                && inhibit_phone == other.inhibit_phone
+                && inhibit_case == other.inhibit_case
                 && interval == other.interval;
         }
 
@@ -76,6 +91,12 @@ namespace Chargectl {
             builder.add_int_value (high);
             builder.set_member_name ("limit");
             builder.add_int_value (limit);
+            builder.set_member_name ("case_limit");
+            builder.add_int_value (case_limit);
+            builder.set_member_name ("inhibit_phone");
+            builder.add_boolean_value (inhibit_phone);
+            builder.set_member_name ("inhibit_case");
+            builder.add_boolean_value (inhibit_case);
             builder.set_member_name ("interval");
             builder.add_int_value (interval);
             builder.end_object ();

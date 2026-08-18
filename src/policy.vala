@@ -5,6 +5,7 @@ namespace Chargectl {
         { "full", "charge the phone to 100%, still before the case" },
         { "case-first", "hold the phone in the band, but let the case fill first" },
         { "balance", "let the case carry the load, moving charge only when the phone runs low" },
+        { "manual", "hold both limits and both chargers where you set them" },
         { "passive", "manage nothing, leave both chargers on auto" },
     };
 
@@ -60,6 +61,24 @@ namespace Chargectl {
     public const int BALANCE_DEADBAND = 50000;
     public const int BALANCE_STEP = 100000;
     public const int BALANCE_MINIMUM = 200000;
+
+    /**
+     * Whether a profile holds the phone between two levels.
+     *
+     * The band is meaningless to the profiles that either charge to full, let
+     * the case carry the load, or do as they are told, and showing its controls
+     * there invites setting a number that does nothing.
+     */
+    public bool profile_uses_band (string profile) {
+        return profile == "maintain" || profile == "case-first";
+    }
+
+    /**
+     * Whether a profile takes its limits and chargers from the settings alone.
+     */
+    public bool profile_is_manual (string profile) {
+        return profile == "manual";
+    }
 
     public string? profile_description (string name) {
         for (int row = 0; row < PROFILES.length[0]; row++) {
