@@ -44,6 +44,21 @@ void main (string[] args) {
         assert (Chargectl.case_floor_guard ("inhibit-charge", null) == "inhibit-charge");
     });
 
+    Test.add_func ("/policy/a-widened-input-holds-once-the-drain-eases", () => {
+        int phone;
+        int case_pack;
+        // -509mA is what a phone drawing 1A through a 0.5A limit reads once widened; without the margin it drops straight back.
+        Chargectl.wanted_limits ("Discharging", 49, -509000, false, true, out phone, out case_pack);
+        assert (phone == Chargectl.PHONE_LIMIT_MEDIUM);
+    });
+
+    Test.add_func ("/policy/an-idle-phone-still-steps-back-down", () => {
+        int phone;
+        int case_pack;
+        Chargectl.wanted_limits ("Discharging", 49, -50000, false, true, out phone, out case_pack);
+        assert (phone == Chargectl.PHONE_LIMIT_LOW);
+    });
+
     Test.add_func ("/policy/only-the-banded-profiles-use-a-band", () => {
         assert (Chargectl.profile_uses_band ("maintain"));
         assert (Chargectl.profile_uses_band ("case-first"));
@@ -61,49 +76,49 @@ void main (string[] args) {
     Test.add_func ("/policy/an-absent-case-gives-the-phone-everything", () => {
         int phone;
         int case_pack;
-        Chargectl.wanted_limits (null, 50, null, false, out phone, out case_pack);
+        Chargectl.wanted_limits (null, 50, null, false, false, out phone, out case_pack);
         assert (phone == Chargectl.PHONE_LIMIT_HIGH);
     });
 
     Test.add_func ("/policy/a-low-phone-on-case-power-takes-the-widest-input", () => {
         int phone;
         int case_pack;
-        Chargectl.wanted_limits ("Discharging", 20, -100000, false, out phone, out case_pack);
+        Chargectl.wanted_limits ("Discharging", 20, -100000, false, false, out phone, out case_pack);
         assert (phone == Chargectl.PHONE_LIMIT_HIGH);
     });
 
     Test.add_func ("/policy/an-idle-phone-on-case-power-sips", () => {
         int phone;
         int case_pack;
-        Chargectl.wanted_limits ("Discharging", 60, -100000, false, out phone, out case_pack);
+        Chargectl.wanted_limits ("Discharging", 60, -100000, false, false, out phone, out case_pack);
         assert (phone == Chargectl.PHONE_LIMIT_LOW);
     });
 
     Test.add_func ("/policy/a-busy-phone-on-case-power-widens", () => {
         int phone;
         int case_pack;
-        Chargectl.wanted_limits ("Discharging", 60, -900000, false, out phone, out case_pack);
+        Chargectl.wanted_limits ("Discharging", 60, -900000, false, false, out phone, out case_pack);
         assert (phone == Chargectl.PHONE_LIMIT_MEDIUM);
     });
 
     Test.add_func ("/policy/a-busy-phone-charging-starves-the-case", () => {
         int phone;
         int case_pack;
-        Chargectl.wanted_limits ("Charging", 40, -900000, true, out phone, out case_pack);
+        Chargectl.wanted_limits ("Charging", 40, -900000, true, false, out phone, out case_pack);
         assert (case_pack == Chargectl.CASE_LIMIT_PHONE_FIRST);
     });
 
     Test.add_func ("/policy/a-quiet-phone-charging-shares-with-the-case", () => {
         int phone;
         int case_pack;
-        Chargectl.wanted_limits ("Charging", 40, 200000, true, out phone, out case_pack);
+        Chargectl.wanted_limits ("Charging", 40, 200000, true, false, out phone, out case_pack);
         assert (case_pack == Chargectl.CASE_LIMIT_SHARED);
     });
 
     Test.add_func ("/policy/a-full-case-yields-to-the-phone", () => {
         int phone;
         int case_pack;
-        Chargectl.wanted_limits ("Full", 40, 0, true, out phone, out case_pack);
+        Chargectl.wanted_limits ("Full", 40, 0, true, false, out phone, out case_pack);
         assert (case_pack == Chargectl.CASE_LIMIT_PHONE_FIRST);
         assert (phone == Chargectl.PHONE_LIMIT_HIGH);
     });

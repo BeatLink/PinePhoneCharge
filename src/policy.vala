@@ -46,6 +46,16 @@ namespace Chargectl {
     public const int HIGH_DEMAND = 600000;
 
     /**
+     * What a widened input hides from the reading it was widened for.
+     *
+     * Once the phone is drawing more from the case, its own pack stops making
+     * up the difference and the current climbs back above the threshold, which
+     * would drop the limit, which would push it under again. ppkbbat-d discounts
+     * the extra supply while it is being given, so the decision stays put.
+     */
+    public const int HIGH_DEMAND_MARGIN = 400000;
+
+    /**
      * The case pack level below which its charger is left alone.
      *
      * Inhibiting the case's charger hands its output to the phone, which is the
@@ -213,7 +223,8 @@ namespace Chargectl {
      * it is absent or not reporting, where the phone gets everything.
      */
     public void wanted_limits (string? case_status, int phone_capacity, int? phone_current,
-                               bool phone_charging, out int phone_limit, out int case_limit) {
+                               bool phone_charging, bool supplying_extra,
+                               out int phone_limit, out int case_limit) {
         case_limit = CASE_LIMIT_DEFAULT;
 
         if (case_status == null) {
@@ -221,7 +232,11 @@ namespace Chargectl {
             return;
         }
 
-        bool busy = phone_current != null && phone_current < -HIGH_DEMAND;
+        bool busy = false;
+        if (phone_current != null) {
+            int measured = phone_current;
+            busy = (supplying_extra ? measured - HIGH_DEMAND_MARGIN : measured) < -HIGH_DEMAND;
+        }
 
         if (case_status == "Discharging") {
             case_limit = CASE_LIMIT_PARALLEL;

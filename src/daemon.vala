@@ -57,6 +57,7 @@ namespace Chargectl {
                 wanted_limits (read (attribute (CASE, "status")), level,
                                read_int (attribute (PHONE, "current_now")),
                                read (attribute (PHONE, "status")) == "Charging",
+                               limit > PHONE_LIMIT_LOW,
                                out phone_limit, out case_limit);
                 // The configured limit is a ceiling on the ladder, not a replacement for it.
                 limit = int.min (phone_limit, values.limit);

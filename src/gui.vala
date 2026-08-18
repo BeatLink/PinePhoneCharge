@@ -172,7 +172,6 @@ namespace Chargectl {
             manual.add (case_limit_row);
             manual.add (inhibit_phone_row);
             manual.add (inhibit_case_row);
-            manual.no_show_all = true;
 
             input = new Hdy.ActionRow ();
             input.title = "Input limit";
@@ -252,11 +251,8 @@ namespace Chargectl {
             low_row.visible = banded;
             high_row.visible = banded;
 
-            if (profile_is_manual (profile)) {
-                manual.show ();
-            } else {
-                manual.hide ();
-            }
+            // Toggled through visible rather than show/hide, so the window's own show_all still reaches the rows inside.
+            manual.visible = profile_is_manual (profile);
         }
 
         private int limit_index (int microamps) {
