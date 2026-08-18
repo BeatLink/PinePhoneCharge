@@ -32,24 +32,17 @@ events.
 1.5A is the value [megi's keyboard FAQ][faq] gives. 2A measures no better on
 either the case's pack or a wall supply, because the case is the bottleneck.
 
-**Charges the phone before the case.** The IP5209's charger and its boost
-converter are separate register fields, so inhibiting the charger leaves the
-output to the phone alone. With a charger on the case, the phone went from
--622mA to +246mA and the case pack sat idle. It is handed back once the phone
-reaches the top of its band.
+**Splits one supply between two packs.** The phone and the case charge from the
+same source, so the profiles are opposites: whichever pack is being favoured
+draws its maximum and the other is held at its minimum. The phone's input
+register takes 0.5A, 0.9A or 1.5A and nothing between; the case's takes any
+value. Both ladders come from [ppkbbat-d][ppkbbat].
 
-**Sizes both limits to what the packs are doing.** The phone's input register
-takes 0.5A, 0.9A or 1.5A and nothing between, and the case's takes any value up
-to 2.3A. Both ladders and the thresholds between them come from [ppkbbat-d][ppkbbat],
-measured against these two chargers: the phone opens up when it is the pack that
-needs charge or the load is above 0.6A, and the case's intake gives way rather
-than its charger being switched off.
-
-**Keeps a flat case pack charging.** Inhibiting the case hands its output to the
-phone, but the boost converter still runs off that pack, so once it is nearly
-empty there is nothing left to convert. Below 20% the case charges regardless of
-profile, at 0.5A so the phone still gets most of the supply. Measured on a case
-at 5%, where inhibiting took the phone from +27mA to -328mA.
+**Never inhibits the case.** An inhibited IP5209 stops drawing from the wall
+altogether rather than handing its output to the phone, so with a charger on the
+case it starves both packs. Measured on a case at 5%, where inhibiting took the
+phone from +27mA to -328mA. Only the phone's own charger is ever held off, and
+only to keep it inside its band.
 
 **Holds the phone in a band.** Lithium cells age by voltage and heat, so time
 spent near full is what wears them. `charge_behaviour` is the driver's own
@@ -59,18 +52,23 @@ control for this, not a register poke.
 
 | profile | what it does |
 | --- | --- |
-| `maintain` | hold the phone in the band, charging it before the case |
-| `full` | charge the phone to 100%, still before the case |
-| `case-first` | hold the phone in the band, but let the case fill first |
-| `balance` | let the case carry the load, moving charge only when the phone runs low |
+| `maintain` | hold the phone in the band, taking the supply from the case |
+| `full` | charge the phone to 100%, taking the supply from the case |
+| `case-first` | fill the case first, leaving the phone its minimum |
+| `balance` | let the case carry the load until the phone runs low, then turn it all to the phone |
 | `manual` | hold both limits and both chargers where you set them |
 | `passive` | manage nothing, leave both chargers on auto |
 
 `balance` follows the reasoning in [pinephone-kbpwrd][kbpwrd]: moving charge
 from the case into the phone pays the boost conversion twice, so the efficient
 thing is to let the case carry the system and only pull charge across when the
-phone is the one running out. It tracks the input limit until the phone neither
-charges nor drains.
+phone is the one running out. Below the band it turns the whole supply to the
+phone and holds that until the phone is back at the top of the band, so a pack
+on the boundary does not swing the supply back and forth.
+
+`manual` and `passive` are the two ends: manual takes both limits and both
+chargers from the settings, passive runs no policy at all beyond the input
+limit the driver otherwise gets wrong.
 
 ```sh
 chargectl                 # status

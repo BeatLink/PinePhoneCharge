@@ -29,7 +29,7 @@ namespace Chargectl {
         write_value (path, wanted.to_string ());
     }
 
-    public int apply (Settings values, int limit) {
+    public int apply (Settings values, int limit, ref bool is_recovering) {
         int? capacity = read_int (attribute (PHONE, "capacity"));
         if (capacity == null) {
             return limit;
@@ -42,26 +42,17 @@ namespace Chargectl {
                 apply_limit (limit);
                 apply_case_limit (values.case_limit);
             } else if (values.profile == "passive") {
-                // Passive manages no charger, but the input limit is what the driver gets wrong by default.
+                // Passive runs no policy, but the input limit is the one thing the driver gets wrong by default.
                 limit = values.limit;
                 apply_limit (limit);
-            } else if (values.profile == "balance") {
-                limit = balanced_limit (limit, level,
-                                        read_int (attribute (CASE, "capacity")),
-                                        read_int (attribute (PHONE, "current_now")),
-                                        values.limit);
-                apply_limit (limit);
             } else {
+                is_recovering = recovering (is_recovering, level, values.low, values.high);
+
                 int phone_limit;
                 int case_limit;
-                wanted_limits (read (attribute (CASE, "status")), level,
-                               read_int (attribute (PHONE, "current_now")),
-                               read (attribute (PHONE, "status")) == "Charging",
-                               limit > PHONE_LIMIT_LOW,
-                               out phone_limit, out case_limit);
-                // The configured limit is a ceiling on the ladder, not a replacement for it.
-                limit = int.min (phone_limit, values.limit);
-                apply_limit (limit);
+                wanted_limits (values.profile, is_recovering, out phone_limit, out case_limit);
+                limit = phone_limit;
+                apply_limit (phone_limit);
                 apply_case_limit (case_limit);
             }
         }
@@ -74,9 +65,6 @@ namespace Chargectl {
         if (values.profile == "manual") {
             phone_behaviour = values.inhibit_phone ? "inhibit-charge" : "auto";
             case_behaviour = values.inhibit_case ? "inhibit-charge" : "auto";
-        } else {
-            case_behaviour = case_floor_guard (case_behaviour,
-                                               read_int (attribute (CASE, "capacity")));
         }
 
         string where = "phone at %d%%,".printf (level);
@@ -88,6 +76,7 @@ namespace Chargectl {
     public void daemon () {
         Settings? active = null;
         int limit = Settings.load ().limit;
+        bool is_recovering = false;
 
         while (true) {
             var values = Settings.load ();
@@ -96,7 +85,7 @@ namespace Chargectl {
                 active = values;
                 limit = values.limit;
             }
-            limit = apply (values, limit);
+            limit = apply (values, limit, ref is_recovering);
             Thread.usleep ((ulong) values.interval * 1000000);
         }
     }
