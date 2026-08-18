@@ -16,23 +16,17 @@ namespace Chargectl {
         write_value (path, wanted.to_string ());
     }
 
-    public void apply_case_current (string? profile_wanted, string? applied) {
+    public void apply_case_limit (int wanted) {
         string path = attribute (CASE, "constant_charge_current");
         if (!present (path)) {
             return;
         }
-        int? wanted = wanted_case_current (profile_wanted, applied,
-                                           read_int (attribute (CASE, "constant_charge_current_max")));
-        if (wanted == null) {
-            return;
-        }
-        int value = wanted;
         int? current = read_int (path);
-        if (current != null && current == value) {
+        if (current != null && current == wanted) {
             return;
         }
-        log ("case charge current -> %d".printf (value));
-        write_value (path, value.to_string ());
+        log ("case charge current -> %d".printf (wanted));
+        write_value (path, wanted.to_string ());
     }
 
     public int apply (Settings values, int limit) {
@@ -42,16 +36,25 @@ namespace Chargectl {
         }
         int level = capacity;
 
-        if (case_attached ()) {
+        if (case_attached () && values.profile != "passive") {
             if (values.profile == "balance") {
                 limit = balanced_limit (limit, level,
                                         read_int (attribute (CASE, "capacity")),
                                         read_int (attribute (PHONE, "current_now")),
                                         values.limit);
+                apply_limit (limit);
             } else {
-                limit = values.limit;
+                int phone_limit;
+                int case_limit;
+                wanted_limits (read (attribute (CASE, "status")), level,
+                               read_int (attribute (PHONE, "current_now")),
+                               read (attribute (PHONE, "status")) == "Charging",
+                               out phone_limit, out case_limit);
+                // The configured limit is a ceiling on the ladder, not a replacement for it.
+                limit = int.min (phone_limit, values.limit);
+                apply_limit (limit);
+                apply_case_limit (case_limit);
             }
-            apply_limit (limit);
         }
 
         string? phone_behaviour;
@@ -59,10 +62,8 @@ namespace Chargectl {
         wanted_behaviours (values.profile, level, values.low, values.high,
                            out phone_behaviour, out case_behaviour);
 
-        string? profile_case = case_behaviour;
         case_behaviour = case_floor_guard (case_behaviour,
                                            read_int (attribute (CASE, "capacity")));
-        apply_case_current (profile_case, case_behaviour);
 
         string where = "phone at %d%%,".printf (level);
         set_behaviour (attribute (PHONE, "charge_behaviour"), phone_behaviour, where);

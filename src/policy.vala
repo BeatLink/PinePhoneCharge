@@ -13,6 +13,38 @@ namespace Chargectl {
     public const string[] DRAIN_PROFILES = { "maintain", "full", "balance" };
 
     /**
+     * The values the AXP's input limit actually takes.
+     *
+     * The register holds a small set of steps rather than an arbitrary
+     * microamp figure, so anything between them rounds down on the way in.
+     * Taken from ppkbbat-d, which established them against the driver.
+     */
+    public const int PHONE_LIMIT_LOW = 500000;
+    public const int PHONE_LIMIT_MEDIUM = 900000;
+    public const int PHONE_LIMIT_HIGH = 1500000;
+
+    /**
+     * What the case may draw for itself, by who needs the supply more.
+     *
+     * The IP5209 takes arbitrary values here, unlike the phone. These are
+     * ppkbbat-d's, whose ladder these mirror: 0.5A while the phone is the one
+     * that needs charge, 0.8A once it is close to full, and the pack's own
+     * 2.3A default when nothing is competing for the supply.
+     */
+    public const int CASE_LIMIT_PHONE_FIRST = 500000;
+    public const int CASE_LIMIT_SHARED = 800000;
+    public const int CASE_LIMIT_PARALLEL = 1500000;
+    public const int CASE_LIMIT_DEFAULT = 2300000;
+
+    /**
+     * The draw at which the phone counts as busy rather than idle.
+     *
+     * ppkbbat-d's threshold: below this the case can carry the system on its
+     * lowest setting, above it the phone needs a wider input to keep up.
+     */
+    public const int HIGH_DEMAND = 600000;
+
+    /**
      * The case pack level below which its charger is left alone.
      *
      * Inhibiting the case's charger hands its output to the phone, which is the
@@ -22,15 +54,6 @@ namespace Chargectl {
      * case at 5%, where inhibiting took the phone from +27mA to -328mA.
      */
     public const int CASE_FLOOR = 20;
-
-    /**
-     * What the case may draw for itself once the floor guard has let it charge.
-     *
-     * The pack has to come back up, but at its own 2.3A it takes most of what
-     * the supply offers and the phone is no better off than under inhibit. A
-     * small share refills it slowly while leaving the phone the rest.
-     */
-    public const int CASE_SHARE_CURRENT = 500000;
 
     public const int BALANCE_FLOOR = 30;
     public const int BALANCE_SKEW = 5;
@@ -163,17 +186,49 @@ namespace Chargectl {
     }
 
     /**
-     * How much the case may draw for itself, given what the profile asked for.
+     * The pair of limits for what both packs are currently doing.
      *
-     * Only the relieved case is throttled: a profile that wanted the case
-     * charging normally gets its full rate back, and one whose inhibit still
-     * stands does not care what the rate is. Null leaves the attribute alone.
+     * Follows ppkbbat-d's ladder rather than inventing one: the phone's input
+     * is opened up whenever it is the pack that needs charge or the load is
+     * high, and the case's intake is what gives way. A null case status means
+     * it is absent or not reporting, where the phone gets everything.
      */
-    public int? wanted_case_current (string? profile_wanted, string? applied, int? maximum) {
-        if (profile_wanted == "inhibit-charge" && applied == "auto") {
-            return CASE_SHARE_CURRENT;
+    public void wanted_limits (string? case_status, int phone_capacity, int? phone_current,
+                               bool phone_charging, out int phone_limit, out int case_limit) {
+        case_limit = CASE_LIMIT_DEFAULT;
+
+        if (case_status == null) {
+            phone_limit = PHONE_LIMIT_HIGH;
+            return;
         }
-        return maximum;
+
+        bool busy = phone_current != null && phone_current < -HIGH_DEMAND;
+
+        if (case_status == "Discharging") {
+            case_limit = CASE_LIMIT_PARALLEL;
+            if (phone_capacity <= BALANCE_FLOOR - 5) {
+                phone_limit = PHONE_LIMIT_HIGH;
+            } else if (busy) {
+                phone_limit = PHONE_LIMIT_MEDIUM;
+            } else {
+                phone_limit = PHONE_LIMIT_LOW;
+            }
+            return;
+        }
+
+        phone_limit = PHONE_LIMIT_HIGH;
+
+        if (case_status == "Full") {
+            case_limit = CASE_LIMIT_PHONE_FIRST;
+            return;
+        }
+
+        if (phone_charging) {
+            case_limit = busy ? CASE_LIMIT_PHONE_FIRST : CASE_LIMIT_SHARED;
+            return;
+        }
+
+        case_limit = CASE_LIMIT_PARALLEL;
     }
 
     /**

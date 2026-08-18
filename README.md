@@ -38,6 +38,13 @@ output to the phone alone. With a charger on the case, the phone went from
 -622mA to +246mA and the case pack sat idle. It is handed back once the phone
 reaches the top of its band.
 
+**Sizes both limits to what the packs are doing.** The phone's input register
+takes 0.5A, 0.9A or 1.5A and nothing between, and the case's takes any value up
+to 2.3A. Both ladders and the thresholds between them come from [ppkbbat-d][ppkbbat],
+measured against these two chargers: the phone opens up when it is the pack that
+needs charge or the load is above 0.6A, and the case's intake gives way rather
+than its charger being switched off.
+
 **Keeps a flat case pack charging.** Inhibiting the case hands its output to the
 phone, but the boost converter still runs off that pack, so once it is nearly
 empty there is nothing left to convert. Below 20% the case charges regardless of
@@ -115,6 +122,7 @@ appear at all.
 attached.** [Pine64's documentation][pine64] warns this may damage the phone or
 the keyboard. Charge through the case's port.
 
+[ppkbbat]: https://codeberg.org/phalio/ppkbbat-tools
 [faq]: https://xnux.eu/pinephone-keyboard/faq.html
 [kbpwrd]: https://github.com/estokes/pinephone-kbpwrd
 [pine64]: https://pine64.org/documentation/Phone_Accessories/Keyboard/
