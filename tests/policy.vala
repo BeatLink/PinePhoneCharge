@@ -24,6 +24,38 @@ void main (string[] args) {
         assert_behaviours ("maintain", 77, 75, 80, null, "inhibit-charge");
     });
 
+    Test.add_func ("/policy/a-nearly-empty-case-keeps-charging", () => {
+        assert (Chargectl.case_floor_guard ("inhibit-charge", 5) == "auto");
+    });
+
+    Test.add_func ("/policy/a-full-case-is-still-inhibited", () => {
+        assert (Chargectl.case_floor_guard ("inhibit-charge", 97) == "inhibit-charge");
+    });
+
+    Test.add_func ("/policy/the-floor-guard-leaves-auto-alone", () => {
+        assert (Chargectl.case_floor_guard ("auto", 5) == "auto");
+    });
+
+    Test.add_func ("/policy/the-floor-guard-holds-at-the-floor", () => {
+        assert (Chargectl.case_floor_guard ("inhibit-charge", Chargectl.CASE_FLOOR) == "inhibit-charge");
+    });
+
+    Test.add_func ("/policy/an-unreadable-case-is-left-as-the-profile-asked", () => {
+        assert (Chargectl.case_floor_guard ("inhibit-charge", null) == "inhibit-charge");
+    });
+
+    Test.add_func ("/policy/a-relieved-case-draws-only-its-share", () => {
+        assert (Chargectl.wanted_case_current ("inhibit-charge", "auto", 3100000) == Chargectl.CASE_SHARE_CURRENT);
+    });
+
+    Test.add_func ("/policy/a-case-the-profile-wanted-charging-keeps-its-rate", () => {
+        assert (Chargectl.wanted_case_current ("auto", "auto", 3100000) == 3100000);
+    });
+
+    Test.add_func ("/policy/an-inhibited-case-keeps-its-rate", () => {
+        assert (Chargectl.wanted_case_current ("inhibit-charge", "inhibit-charge", 3100000) == 3100000);
+    });
+
     Test.add_func ("/policy/case-first-never-inhibits-the-case", () => {
         assert_behaviours ("case-first", 20, 75, 80, "auto", "auto");
     });

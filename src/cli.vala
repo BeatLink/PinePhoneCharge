@@ -99,6 +99,59 @@ namespace Chargectl {
         return 0;
     }
 
+    public int set_limit (string text) {
+        double amps = 0;
+        if (!double.try_parse (text, out amps) || amps <= 0 || amps > 3) {
+            stderr.printf ("limit must be an amperage between 0 and 3\n");
+            return 1;
+        }
+
+        var values = Settings.load ();
+        values.limit = (int) (amps * 1000000);
+        try {
+            values.save ();
+        } catch (Error error) {
+            stderr.printf ("%s\n", error.message);
+            return 1;
+        }
+
+        stdout.printf ("input limit %.2f A\n", amps);
+        return 0;
+    }
+
+    /**
+     * Turns the case's output to the phone on and off.
+     *
+     * The boost converter is what feeds the phone, so switching it off leaves
+     * the case a keyboard that charges from its own port and nothing else.
+     */
+    public int toggle_output (string? wanted) {
+        string path = attribute (CASE_BOOST, "online");
+        if (!present (path)) {
+            stderr.printf ("no keyboard case attached\n");
+            return 1;
+        }
+
+        string? state = read (path);
+        if (wanted == null) {
+            stdout.printf ("case output %s\n", state == "1" ? "on" : "off");
+            return 0;
+        }
+
+        string value = wanted == "on" ? "1" : "0";
+        if (wanted != "on" && wanted != "off") {
+            stderr.printf ("usage: chargectl output [on|off]\n");
+            return 2;
+        }
+        if (!write_value (path, value)) {
+            stderr.printf ("could not switch the case output, needs root\n");
+            return 1;
+        }
+
+        stdout.printf ("case output %s\n", wanted);
+        return 0;
+    }
+
     public void usage () {
         stdout.printf ("Control how the PinePhone and its keyboard case charge\n");
         stdout.printf ("\n");
@@ -107,6 +160,8 @@ namespace Chargectl {
         stdout.printf ("  chargectl watch           warn when the phone drains on the charger\n");
         stdout.printf ("  chargectl profile [name]  show or set the profile\n");
         stdout.printf ("  chargectl band low high   set the hold band\n");
+        stdout.printf ("  chargectl limit [amps]    set the current drawn from the case\n");
+        stdout.printf ("  chargectl output [on|off] show or switch the case's output\n");
     }
 }
 
@@ -143,6 +198,16 @@ public static int main (string[] args) {
             return 2;
         }
         return Chargectl.set_band (low, high);
+
+    case "limit":
+        if (args.length < 3) {
+            stdout.printf ("%.2f A\n", Chargectl.Settings.load ().limit / 1000000.0);
+            return 0;
+        }
+        return Chargectl.set_limit (args[2]);
+
+    case "output":
+        return Chargectl.toggle_output (args.length > 2 ? args[2] : null);
 
     case "help":
     case "--help":

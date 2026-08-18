@@ -38,6 +38,12 @@ output to the phone alone. With a charger on the case, the phone went from
 -622mA to +246mA and the case pack sat idle. It is handed back once the phone
 reaches the top of its band.
 
+**Keeps a flat case pack charging.** Inhibiting the case hands its output to the
+phone, but the boost converter still runs off that pack, so once it is nearly
+empty there is nothing left to convert. Below 20% the case charges regardless of
+profile, at 0.5A so the phone still gets most of the supply. Measured on a case
+at 5%, where inhibiting took the phone from +27mA to -328mA.
+
 **Holds the phone in a band.** Lithium cells age by voltage and heat, so time
 spent near full is what wears them. `charge_behaviour` is the driver's own
 control for this, not a register poke.
@@ -63,6 +69,8 @@ chargectl                 # status
 chargectl profile         # list profiles, show the active one
 chargectl profile full    # charge to 100% before a long day out
 chargectl band 40 60      # a tighter band for a phone that mostly sits docked
+chargectl limit 1.2       # draw less from a case that cannot keep up
+chargectl output off      # stop the case feeding the phone entirely
 ```
 
 There is also `chargectl-gui`, an adaptive GTK3/libhandy window that shows both

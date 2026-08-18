@@ -12,6 +12,26 @@ namespace Chargectl {
     public const int64 DRAIN_SUSTAIN = 30000000;
     public const string[] DRAIN_PROFILES = { "maintain", "full", "balance" };
 
+    /**
+     * The case pack level below which its charger is left alone.
+     *
+     * Inhibiting the case's charger hands its output to the phone, which is the
+     * point, but the boost converter still runs off that pack. Once it is close
+     * to empty there is nothing to convert: the phone stops charging and both
+     * packs fall together, which is worse than sharing the supply. Measured on a
+     * case at 5%, where inhibiting took the phone from +27mA to -328mA.
+     */
+    public const int CASE_FLOOR = 20;
+
+    /**
+     * What the case may draw for itself once the floor guard has let it charge.
+     *
+     * The pack has to come back up, but at its own 2.3A it takes most of what
+     * the supply offers and the phone is no better off than under inhibit. A
+     * small share refills it slowly while leaving the phone the rest.
+     */
+    public const int CASE_SHARE_CURRENT = 500000;
+
     public const int BALANCE_FLOOR = 30;
     public const int BALANCE_SKEW = 5;
     public const int BALANCE_DEADBAND = 50000;
@@ -124,6 +144,36 @@ namespace Chargectl {
         }
 
         case_pack = capacity < high ? "inhibit-charge" : "auto";
+    }
+
+    /**
+     * Keeps a nearly empty case pack charging even where the profile would not.
+     *
+     * Applied over the profile's choice rather than inside it, because the rule
+     * is about the hardware rather than the intent: every profile that inhibits
+     * the case wants the phone charged, and none of them want it charged from a
+     * pack with nothing in it.
+     */
+    public string? case_floor_guard (string? wanted, int? case_capacity) {
+        if (wanted != "inhibit-charge" || case_capacity == null) {
+            return wanted;
+        }
+        int level = case_capacity;
+        return level < CASE_FLOOR ? "auto" : wanted;
+    }
+
+    /**
+     * How much the case may draw for itself, given what the profile asked for.
+     *
+     * Only the relieved case is throttled: a profile that wanted the case
+     * charging normally gets its full rate back, and one whose inhibit still
+     * stands does not care what the rate is. Null leaves the attribute alone.
+     */
+    public int? wanted_case_current (string? profile_wanted, string? applied, int? maximum) {
+        if (profile_wanted == "inhibit-charge" && applied == "auto") {
+            return CASE_SHARE_CURRENT;
+        }
+        return maximum;
     }
 
     /**
