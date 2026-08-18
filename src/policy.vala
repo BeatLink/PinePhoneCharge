@@ -14,25 +14,26 @@ namespace Chargectl {
     public const string[] DRAIN_PROFILES = { "maintain", "full", "balance" };
 
     /**
-     * The values the AXP's input limit actually takes.
+     * What each register actually accepts, probed against the hardware.
      *
-     * The register holds a small set of steps rather than an arbitrary
-     * microamp figure, so anything between them rounds down on the way in.
-     * Taken from ppkbbat-d, which established them against the driver.
+     * The phone takes anything up to 4A and clamps above it; the case takes
+     * 100000 up to 3100000 and rejects more. ppkbbat-d's 1.5A is its own
+     * default rather than a ceiling: the limit is permission to draw, and the
+     * supply is what decides the rest. Held at 3A rather than the register's
+     * 4A, which is past anything this phone is ever plugged into.
      */
-    public const int PHONE_LIMIT_LOW = 500000;
-    public const int PHONE_LIMIT_MEDIUM = 900000;
-    public const int PHONE_LIMIT_HIGH = 1500000;
+    public const int PHONE_LIMIT_MIN = 500000;
+    public const int PHONE_LIMIT_MAX = 3000000;
+    public const int CASE_LIMIT_MIN = 100000;
+    public const int CASE_LIMIT_MAX = 3100000;
 
     /**
-     * What the case draws from the wall for itself.
+     * What the phone draws while the case is meant to carry the system.
      *
-     * The IP5209 takes arbitrary values here, unlike the phone. Held down to
-     * the minimum whenever the phone is the pack that matters, because the two
-     * share one supply and the case will otherwise take most of it.
+     * Between the two ends on purpose: the case supplies most of the load and
+     * the phone's own pack makes up the rest, so the two fall together.
      */
-    public const int CASE_LIMIT_MIN = 500000;
-    public const int CASE_LIMIT_MAX = 2300000;
+    public const int PHONE_LIMIT_SHARED = 900000;
 
     /**
      * Whether a profile holds the phone between two levels.
@@ -172,7 +173,7 @@ namespace Chargectl {
      */
     public void wanted_limits (string profile, bool is_recovering, out int phone_limit, out int case_limit) {
         if (profile == "case-first") {
-            phone_limit = PHONE_LIMIT_LOW;
+            phone_limit = PHONE_LIMIT_MIN;
             case_limit = CASE_LIMIT_MAX;
             return;
         }
@@ -180,13 +181,13 @@ namespace Chargectl {
         if (profile == "balance" && !is_recovering) {
             // The case carries the majority so both packs fall together, which
             // beats moving charge across the boost converter twice over.
-            phone_limit = PHONE_LIMIT_MEDIUM;
+            phone_limit = PHONE_LIMIT_SHARED;
             case_limit = CASE_LIMIT_MAX;
             return;
         }
 
         // maintain, full, and balance once the phone has run low.
-        phone_limit = PHONE_LIMIT_HIGH;
+        phone_limit = PHONE_LIMIT_MAX;
         case_limit = CASE_LIMIT_MIN;
     }
 }

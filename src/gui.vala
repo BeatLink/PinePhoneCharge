@@ -139,6 +139,8 @@ namespace Chargectl {
             phone_limit.append_text ("0.5 A");
             phone_limit.append_text ("0.9 A");
             phone_limit.append_text ("1.5 A");
+            phone_limit.append_text ("2.0 A");
+            phone_limit.append_text ("3.0 A");
             phone_limit.valign = Gtk.Align.CENTER;
             phone_limit.changed.connect (on_manual_changed);
             var phone_limit_row = new Hdy.ActionRow ();
@@ -261,19 +263,22 @@ namespace Chargectl {
             manual.visible = profile_is_manual (profile);
         }
 
+        private const int[] LIMIT_STEPS = { 500000, 900000, 1500000, 2000000, 3000000 };
+
         private int limit_index (int microamps) {
-            if (microamps <= PHONE_LIMIT_LOW) {
-                return 0;
+            for (int step = 0; step < LIMIT_STEPS.length; step++) {
+                if (microamps <= LIMIT_STEPS[step]) {
+                    return step;
+                }
             }
-            return microamps <= PHONE_LIMIT_MEDIUM ? 1 : 2;
+            return LIMIT_STEPS.length - 1;
         }
 
         private void on_manual_changed () {
             var values = Settings.load ();
-            int[] steps = { PHONE_LIMIT_LOW, PHONE_LIMIT_MEDIUM, PHONE_LIMIT_HIGH };
             int active = phone_limit.get_active ();
             if (active >= 0) {
-                values.limit = steps[active];
+                values.limit = LIMIT_STEPS[active];
             }
             values.case_limit = (int) (case_limit.get_value () * 1000000);
             values.inhibit_phone = inhibit_phone.get_active ();

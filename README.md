@@ -34,9 +34,10 @@ either the case's pack or a wall supply, because the case is the bottleneck.
 
 **Splits one supply between two packs.** The phone and the case charge from the
 same source, so the profiles are opposites: whichever pack is being favoured
-draws its maximum and the other is held at its minimum. The phone's input
-register takes 0.5A, 0.9A or 1.5A and nothing between; the case's takes any
-value. Both ladders come from [ppkbbat-d][ppkbbat].
+draws its maximum and the other is held at its minimum. Probed against the hardware, the phone's input register takes anything up to 4A
+and clamps above that, and the case's takes 100000 to 3100000. The favoured pack
+gets 3A, which is past any supply this phone is plugged into; ppkbbat-d's 1.5A is
+its own default rather than a ceiling.
 
 **Never inhibits the case.** An inhibited IP5209 stops drawing from the wall
 altogether rather than handing its output to the phone, so with a charger on the

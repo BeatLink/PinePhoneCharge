@@ -43,20 +43,20 @@ void main (string[] args) {
     });
 
     Test.add_func ("/policy/maintain-and-full-starve-the-case", () => {
-        assert_limits ("maintain", false, Chargectl.PHONE_LIMIT_HIGH, Chargectl.CASE_LIMIT_MIN);
-        assert_limits ("full", false, Chargectl.PHONE_LIMIT_HIGH, Chargectl.CASE_LIMIT_MIN);
+        assert_limits ("maintain", false, Chargectl.PHONE_LIMIT_MAX, Chargectl.CASE_LIMIT_MIN);
+        assert_limits ("full", false, Chargectl.PHONE_LIMIT_MAX, Chargectl.CASE_LIMIT_MIN);
     });
 
     Test.add_func ("/policy/case-first-does-the-opposite", () => {
-        assert_limits ("case-first", false, Chargectl.PHONE_LIMIT_LOW, Chargectl.CASE_LIMIT_MAX);
+        assert_limits ("case-first", false, Chargectl.PHONE_LIMIT_MIN, Chargectl.CASE_LIMIT_MAX);
     });
 
     Test.add_func ("/policy/balance-lets-the-case-carry-the-load", () => {
-        assert_limits ("balance", false, Chargectl.PHONE_LIMIT_MEDIUM, Chargectl.CASE_LIMIT_MAX);
+        assert_limits ("balance", false, Chargectl.PHONE_LIMIT_SHARED, Chargectl.CASE_LIMIT_MAX);
     });
 
     Test.add_func ("/policy/balance-turns-everything-to-a-low-phone", () => {
-        assert_limits ("balance", true, Chargectl.PHONE_LIMIT_HIGH, Chargectl.CASE_LIMIT_MIN);
+        assert_limits ("balance", true, Chargectl.PHONE_LIMIT_MAX, Chargectl.CASE_LIMIT_MIN);
     });
 
     Test.add_func ("/policy/recovery-starts-below-the-band", () => {
