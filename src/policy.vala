@@ -1,10 +1,10 @@
 namespace Chargectl {
 
     public const string[,] PROFILES = {
-        { "maintain", "hold the phone in the band, charging it before the case" },
-        { "full", "charge the phone to 100%, still before the case" },
-        { "case-first", "hold the phone in the band, but let the case fill first" },
-        { "balance", "let the case carry the load, moving charge only when the phone runs low" },
+        { "maintain", "hold the phone in the band, taking the supply from the case" },
+        { "full", "charge the phone to 100%, taking the supply from the case" },
+        { "case-first", "fill the case first, leaving the phone its minimum" },
+        { "balance", "let the case carry the load until the phone runs low, then turn it all to the phone" },
         { "manual", "hold both limits and both chargers where you set them" },
         { "passive", "manage nothing, leave both chargers on auto" },
     };

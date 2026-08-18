@@ -74,6 +74,7 @@ namespace Chargectl {
         private PackRow case_pack;
         private Hdy.ActionRow profile_row;
         private Hdy.ActionRow input;
+        private Hdy.ActionRow case_input;
         private Gtk.ComboBoxText profile;
         private Gtk.SpinButton low;
         private Gtk.SpinButton high;
@@ -173,11 +174,15 @@ namespace Chargectl {
             manual.add (inhibit_phone_row);
             manual.add (inhibit_case_row);
 
+            // Always on show, whatever the profile: these are what every profile is ultimately setting.
             input = new Hdy.ActionRow ();
-            input.title = "Input limit";
+            input.title = "Phone draws";
+            case_input = new Hdy.ActionRow ();
+            case_input.title = "Case draws";
             var supply = new Hdy.PreferencesGroup ();
-            supply.title = "From the case";
+            supply.title = "Limits in force";
             supply.add (input);
+            supply.add (case_input);
 
             var page = new Hdy.PreferencesPage ();
             page.add (packs);
@@ -221,6 +226,7 @@ namespace Chargectl {
             input.subtitle = "%s  ·  case %s".printf (
                 microunits (read_int (attribute (PHONE_INPUT, "input_current_limit")), "A"),
                 case_attached () ? "attached" : "detached");
+            case_input.subtitle = microunits (read_int (attribute (CASE, "constant_charge_current")), "A");
 
             var values = Settings.load ();
             loading = true;
