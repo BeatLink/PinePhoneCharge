@@ -42,13 +42,18 @@ void main (string[] args) {
         assert_behaviours ("full", 99, 75, 80, "auto", "auto");
     });
 
-    Test.add_func ("/policy/maintain-and-full-starve-the-case", () => {
-        assert_limits ("maintain", false, Chargectl.PHONE_LIMIT_MAX, Chargectl.CASE_LIMIT_MIN);
-        assert_limits ("full", false, Chargectl.PHONE_LIMIT_MAX, Chargectl.CASE_LIMIT_MIN);
+    Test.add_func ("/policy/maintain-and-full-starve-the-case-while-the-phone-wants-charge", () => {
+        assert_limits ("maintain", true, Chargectl.PHONE_LIMIT_MAX, Chargectl.CASE_LIMIT_MIN);
+        assert_limits ("full", true, Chargectl.PHONE_LIMIT_MAX, Chargectl.CASE_LIMIT_MIN);
+    });
+
+    Test.add_func ("/policy/a-satisfied-phone-hands-the-supply-to-the-case", () => {
+        assert_limits ("maintain", false, Chargectl.PHONE_LIMIT_MIN, Chargectl.CASE_LIMIT_MAX);
+        assert_limits ("full", false, Chargectl.PHONE_LIMIT_MIN, Chargectl.CASE_LIMIT_MAX);
     });
 
     Test.add_func ("/policy/case-first-does-the-opposite", () => {
-        assert_limits ("case-first", false, Chargectl.PHONE_LIMIT_MIN, Chargectl.CASE_LIMIT_MAX);
+        assert_limits ("case-first", true, Chargectl.PHONE_LIMIT_MIN, Chargectl.CASE_LIMIT_MAX);
     });
 
     Test.add_func ("/policy/balance-lets-the-case-carry-the-load", () => {

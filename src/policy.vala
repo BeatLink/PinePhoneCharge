@@ -166,27 +166,22 @@ namespace Chargectl {
     }
 
     /**
-     * How much each pack draws, by profile.
+     * How much each pack draws, by profile and by whether the phone still wants charge.
      *
      * One supply feeds both, so these are opposites: whichever pack is not
-     * being favoured is held at its minimum.
+     * being favoured is held at its minimum. Once the phone has what it was
+     * going to get -- the top of its band, or full -- the supply passes to the
+     * case rather than going unused, since holding the phone's charger off does
+     * not stop the case being the thing plugged into the wall.
      */
-    public void wanted_limits (string profile, bool is_recovering, out int phone_limit, out int case_limit) {
-        if (profile == "case-first") {
-            phone_limit = PHONE_LIMIT_MIN;
+    public void wanted_limits (string profile, bool phone_wants_charge, out int phone_limit, out int case_limit) {
+        if (profile == "case-first" || !phone_wants_charge) {
+            // balance keeps the phone on its shared draw, so the case still carries the system rather than only filling itself.
+            phone_limit = profile == "balance" ? PHONE_LIMIT_SHARED : PHONE_LIMIT_MIN;
             case_limit = CASE_LIMIT_MAX;
             return;
         }
 
-        if (profile == "balance" && !is_recovering) {
-            // The case carries the majority so both packs fall together, which
-            // beats moving charge across the boost converter twice over.
-            phone_limit = PHONE_LIMIT_SHARED;
-            case_limit = CASE_LIMIT_MAX;
-            return;
-        }
-
-        // maintain, full, and balance once the phone has run low.
         phone_limit = PHONE_LIMIT_MAX;
         case_limit = CASE_LIMIT_MIN;
     }

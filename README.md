@@ -39,6 +39,10 @@ and clamps above that, and the case's takes 100000 to 3100000. The favoured pack
 gets 3A, which is past any supply this phone is plugged into; ppkbbat-d's 1.5A is
 its own default rather than a ceiling.
 
+**Hands the supply on once the phone is done.** Holding the phone's charger off
+at the top of its band does not stop the case being the thing plugged into the
+wall, so the case takes the supply from there rather than leaving it unused.
+
 **Never inhibits the case.** An inhibited IP5209 stops drawing from the wall
 altogether rather than handing its output to the phone, so with a charger on the
 case it starves both packs. Measured on a case at 5%, where inhibiting took the

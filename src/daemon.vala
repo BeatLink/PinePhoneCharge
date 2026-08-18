@@ -46,11 +46,13 @@ namespace Chargectl {
                 limit = values.limit;
                 apply_limit (limit);
             } else {
+                // full has no band to sit in, so it wants charge until there is nowhere left to put it.
                 is_recovering = recovering (is_recovering, level, values.low, values.high);
+                bool wants_charge = values.profile == "full" ? level < 100 : is_recovering;
 
                 int phone_limit;
                 int case_limit;
-                wanted_limits (values.profile, is_recovering, out phone_limit, out case_limit);
+                wanted_limits (values.profile, wants_charge, out phone_limit, out case_limit);
                 limit = phone_limit;
                 apply_limit (phone_limit);
                 apply_case_limit (case_limit);
