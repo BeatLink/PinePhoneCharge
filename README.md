@@ -1,5 +1,7 @@
 # chargectl
 
+<a href="https://liberapay.com/BeatLink/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a>
+
 Charge control for the PinePhone and its keyboard case.
 
 The phone limits itself to 500mA from the case, which is less than it draws
